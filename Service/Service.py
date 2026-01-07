@@ -11,13 +11,15 @@ class Service :
         self.root = root
         self.ui = ui
         self.util = util
+        # 엑셀파일 저장경로
         self.excel_path = r"c:\1312\esu.xlsx"
+        # 인증 cdkey 값 입력
         self.cdkey = "cd키값 입력"
         self.current_ip = self.util.get_local_ip()
         self.current_version = self.util.get_windows_build()
 
+    # 엑셀 파일 및 폴더 확인/생성
     def ensure_excel_exists(self):
-        """엑셀 파일 및 폴더 확인/생성 (PRE 열 추가)"""
         folder = Path(r"c:\1312")
         if not folder.exists():
             folder.mkdir(parents=True, exist_ok=True)
@@ -46,8 +48,8 @@ class Service :
         except PermissionError:
             messagebox.showerror("파일 오류", "엑셀 파일(esu.xlsx)이 열려있습니다.\n파일을 닫고 프로그램을 다시 실행해주세요.")
     
+    # cmd명령어 실행
     def run_command(self, command):
-        """명령어 실행"""
         try:
             result = subprocess.run(
                 command,
@@ -61,8 +63,8 @@ class Service :
         except Exception as e:
             return f"오류: {str(e)}"
     
+    # A작업: Windows 버전 확인 후 CD키 설치 후 설치ID(DTI)값 수집후 엑셀에 저장
     def check_installation_id(self):
-        """A작업: Windows 버전 확인 후 설치ID 수집"""
         # 먼저 Windows 버전 확인
         if not self.util.check_windows_version():
             # 버전이 맞지 않으면 PRE 열에 "실패" 저장
@@ -78,8 +80,6 @@ class Service :
             return
         
         # 버전이 맞으면 CD 키 확인
-        #cdkey = "cd키값 입력"
-        
         if not self.cdkey:
             messagebox.showwarning("입력 오류", "CD 키를 입력해주세요!")
             return
@@ -108,8 +108,8 @@ class Service :
             messagebox.showerror("오류", f"설치ID 수집 실패\n\n{result_dti}")
             self.ui.status_label.config(text="설치 실패", fg="red")
     
+    # PRE 열에 상태 저장(윈도우 버전 불일치 시 사용)
     def save_pre_status(self, status):
-        """PRE 열에 상태 저장"""
         try:
             wb = openpyxl.load_workbook(self.excel_path)
             ws = wb.active
@@ -137,8 +137,8 @@ class Service :
             messagebox.showerror("오류", f"엑셀 저장 중 오류 발생: {e}")
             return False
     
+    # 설치ID(DTI) 값 추출
     def extract_dti_value(self, output):
-        """DTI 명령 결과에서 설치 ID 추출"""
         lines = output.strip().split('\n')
         for line in lines:
             if '설치 ID' in line or 'Installation ID' in line:
@@ -153,8 +153,8 @@ class Service :
             
         return clean_output
     
+    # 엑셀에 IP와 DTI 저장
     def save_to_excel(self, dti_value):
-        """엑셀에 IP와 DTI 저장"""
         try:
             wb = openpyxl.load_workbook(self.excel_path)
             ws = wb.active
@@ -182,8 +182,8 @@ class Service :
             messagebox.showerror("오류", f"엑셀 저장 중 오류 발생: {e}")
             return False
     
+    # B작업: 인증 및 라이선스 상태 확인
     def activate_esu(self):
-        """B작업: 인증 및 라이선스 상태 확인"""
         self.ui.status_label.config(text="인증 진행 중...", fg="blue")
         self.root.update()
         
@@ -230,10 +230,8 @@ class Service :
                 f"QDFWW 키의 라이선스 상태를 찾을 수 없습니다.")
             self.ui.status_label.config(text="인증 완료 (상태 미확인)", fg="orange")
     
+    # QDFWW 키의 라이선스 상태 추출
     def extract_license_status(self, dlv_output):
-        """
-        /dlv 결과에서 부분 제품키가 QDFWW인 항목의 라이선스 상태 추출
-        """
         # 한글 윈도우 패턴
         pattern_kor = r"부분 제품 키\s*:\s*QDFWW.*?라이선스 상태\s*:\s*([^\r\n]+)"
         match = re.search(pattern_kor, dlv_output, re.DOTALL | re.IGNORECASE)
@@ -248,8 +246,8 @@ class Service :
         
         return None
     
+    # 현재 PC IP에 해당하는 라이선스 상태를 엑셀에 저장
     def save_license_status_to_excel(self, license_status):
-        """현재 PC IP에 해당하는 행의 END 열에 라이선스 상태 저장"""
         try:
             wb = openpyxl.load_workbook(self.excel_path)
             ws = wb.active
@@ -277,8 +275,8 @@ class Service :
             messagebox.showerror("오류", f"저장 중 오류 발생: {e}")
             return False
     
+    # 현재 PC IP에 해당하는 확인 값 가져오기
     def get_confirm_value_from_excel(self):
-        """현재 PC IP에 해당하는 확인 값 가져오기"""
         try:
             wb = openpyxl.load_workbook(self.excel_path, data_only=True)
             ws = wb.active

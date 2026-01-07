@@ -5,11 +5,13 @@ import ctypes
 from tkinter import messagebox
 
 class Util:
+
     def __init__(self, root=None):
         self.root = root
+
+    # 윈도우 빌드 번호 가져오기(레지스트리 값)
     @staticmethod
     def get_windows_build():
-        """Windows 빌드 번호 정확하게 가져오기 (레지스트리 사용)"""
         try:
             key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 
                                 r"SOFTWARE\Microsoft\Windows NT\CurrentVersion")
@@ -30,17 +32,17 @@ class Util:
         except:
             return "알 수 없음"
     
+    # 윈도우 10 버전이 19045.6456인지 확인
     @staticmethod
     def check_windows_version():
-        """Windows 10 버전이 19045.6456인지 확인"""
         required_version = "19045.6456"
         current_build = Util.get_windows_build()
         
         return current_build == required_version
     
+    # 현재 PC의 IP 주소 가져오기
     @staticmethod
     def get_local_ip():
-        """현재 PC의 IP 주소 가져오기"""
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(("8.8.8.8", 80))
@@ -49,7 +51,8 @@ class Util:
             return ip
         except:
             return "127.0.0.1"
-        
+    
+    # 기본 아이콘 경로 반환
     @staticmethod
     def _default_icon_path():
         repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -62,15 +65,15 @@ class Util:
                 return path
         return ""
     
+    # 관리자 권한 확인  
     def is_admin(self):
-        """관리자 권한 확인"""
         try:
             return ctypes.windll.shell32.IsUserAnAdmin()
         except:
             return False
     
+    # 관리자 권한으로 재실행
     def request_admin(self):
-        """관리자 권한으로 재실행"""
         result = messagebox.askokcancel(
                 "관리자 권한 필요",
                 "이 프로그램은 관리자 권한이 필요합니다.\n관리자 권한으로 다시 시작하시겠습니까?"

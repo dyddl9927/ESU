@@ -6,7 +6,7 @@ class Ui :
     def __init__(self, root) :  
         self.root = root
 
-
+    # UI 설정
     def setup_ui(self, service):
         # 메인 프레임
         main_frame = tk.Frame(self.root, padx=20, pady=20)
@@ -29,6 +29,7 @@ class Ui :
                                 font=("Pretendard SemiBold", 9), fg="blue")
         version_label.pack(pady=(0, 20))
         
+        # 원본의 cdkey 입력란 주석 처리
         # CD 키 입력 프레임
         # cdkey_frame = tk.Frame(main_frame)
         # cdkey_frame.pack(pady=10, fill='x')
@@ -41,6 +42,7 @@ class Ui :
         button_frame = tk.Frame(main_frame)
         button_frame.pack(pady=30)
         
+        # 원본의 A작업 작동 버튼 주석 처리
         # A작업 버튼 - "설치"로 변경
         # self.btn_check = tk.Button(button_frame, text="설치", 
         #                            font=("맑은 고딕", 12, "bold"),
@@ -63,8 +65,8 @@ class Ui :
                                     fg="black")
         self.status_label.pack(pady=(20, 0))
 
+    # 창을 화면 중앙에 배치
     def center_window(self):
-        """창을 화면 중앙에 배치"""
         self.root.update_idletasks()
         width = self.root.winfo_width()
         height = self.root.winfo_height()
