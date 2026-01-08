@@ -1,0 +1,1 @@
+pyinstaller main.py -F -w -n "ESU_1.0.0.0" --icon=logo2.ico --add-data="Pretendard-SemiBold.otf;." --add-data="logo2.ico;."

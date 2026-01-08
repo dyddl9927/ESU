@@ -35,10 +35,14 @@ class Util:
     # 윈도우 10 버전이 19045.6456인지 확인
     @staticmethod
     def check_windows_version():
+        flag = False
         required_version = "19045.6456"
         current_build = Util.get_windows_build()
+
+        if current_build == "19045.6456" or current_build == "19045.6466":
+            flag = True
         
-        return current_build == required_version
+        return flag
     
     # 현재 PC의 IP 주소 가져오기
     @staticmethod
