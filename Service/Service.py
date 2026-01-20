@@ -14,7 +14,7 @@ class Service :
         # 엑셀파일 저장경로
         self.excel_path = r"c:\1312\esu.xlsx"
         # 인증 cdkey 값 입력
-        self.cdkey = "cd키값 입력"
+        self.cdkey = "DNRWD-2G6XB-YYVK2-MVDJW-QDFWW"
         self.current_ip = self.util.get_local_ip()
         self.current_version = self.util.get_windows_build()
 
@@ -207,18 +207,22 @@ class Service :
         self.ui.status_label.config(text="라이선스 상태 확인 중...", fg="blue")
         self.root.update()
         
-        cmd_dlv = 'cscript //Nologo c:\\windows\\system32\\slmgr.vbs /dlv'
-        result_dlv = self.run_command(cmd_dlv)
+        # cmd_dlv = 'cscript //Nologo c:\\windows\\system32\\slmgr.vbs /dlv'
+        # result_dlv = self.run_command(cmd_dlv)
         
-        # QDFWW 키의 라이선스 상태 추출
+        esu_activation_id = self.extract_esu_activation_id(result_dlv)
+        if esu_activation_id:
+            cmd_dlv_esu = f'cscript //Nologo c:\\windows\\system32\\slmgr.vbs /dlv {esu_activation_id}'
+            result_dlv = self.run_command(cmd_dlv_esu)
+        
         license_status = self.extract_license_status(result_dlv)
         
-        if license_status:
+        if license_status == "사용 허가됨":
             # 엑셀에 라이선스 상태 저장
             if self.save_license_status_to_excel(license_status):
                 messagebox.showinfo("성공", 
                     f"인증이 완료되었습니다!\n\n"
-                    f"인증 결과:\n{result_atp}\n\n"
+                    f"인증 결과: 인증성공!\n\n"
                     f"라이선스 상태: {license_status}\n\n"
                     f"엑셀 파일 END 열에 저장되었습니다.")
                 self.ui.status_label.config(text="인증 및 상태 확인 완료", fg="green")
@@ -228,22 +232,52 @@ class Service :
             messagebox.showwarning("결과", 
                 f"인증 결과:\n{result_atp}\n\n"
                 f"QDFWW 키의 라이선스 상태를 찾을 수 없습니다.")
-            self.ui.status_label.config(text="인증 완료 (상태 미확인)", fg="orange")
+            self.ui.status_label.config(text="인증 실패 (상태 미확인)", fg="orange")
     
-    # QDFWW 키의 라이선스 상태 추출
+    # ESU 라이선스 상태 추출
     def extract_license_status(self, dlv_output):
-        # 한글 윈도우 패턴
-        pattern_kor = r"부분 제품 키\s*:\s*QDFWW.*?라이선스 상태\s*:\s*([^\r\n]+)"
-        match = re.search(pattern_kor, dlv_output, re.DOTALL | re.IGNORECASE)
+        block = self.extract_esu_block(dlv_output)
+        if block:
+            status = self.extract_license_status_from_block(block)
+            if status:
+                return status
+        return self.extract_license_status_from_block(dlv_output)
+
+    def extract_esu_activation_id(self, dlv_output):
+        block = self.extract_esu_block(dlv_output)
+        if not block:
+            return None
+        pattern_kor = r"정품 인증 ID\s*:\s*([^\r\n]+)"
+        match = re.search(pattern_kor, block, re.IGNORECASE)
         if match:
             return match.group(1).strip()
-            
-        # 영문 윈도우 패턴
-        pattern_eng = r"Partial Product Key\s*:\s*QDFWW.*?License Status\s*:\s*([^\r\n]+)"
-        match_eng = re.search(pattern_eng, dlv_output, re.DOTALL | re.IGNORECASE)
+        pattern_eng = r"Activation ID\s*:\s*([^\r\n]+)"
+        match_eng = re.search(pattern_eng, block, re.IGNORECASE)
         if match_eng:
             return match_eng.group(1).strip()
-        
+        return None
+
+    def extract_esu_block(self, dlv_output):
+        blocks = re.split(r"\r?\n\r?\n+", dlv_output)
+        for block in blocks:
+            if re.search(r"\bESU\b", block, re.IGNORECASE):
+                return block
+        for block in blocks:
+            if re.search(r"부분 제품 키\s*:\s*QDFWW", block, re.IGNORECASE):
+                return block
+            if re.search(r"Partial Product Key\s*:\s*QDFWW", block, re.IGNORECASE):
+                return block
+        return None
+
+    def extract_license_status_from_block(self, text):
+        pattern_kor = r"라이선스 상태\s*:\s*([^\r\n]+)"
+        match = re.search(pattern_kor, text, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+        pattern_eng = r"License Status\s*:\s*([^\r\n]+)"
+        match_eng = re.search(pattern_eng, text, re.IGNORECASE)
+        if match_eng:
+            return match_eng.group(1).strip()
         return None
     
     # 현재 PC IP에 해당하는 라이선스 상태를 엑셀에 저장
