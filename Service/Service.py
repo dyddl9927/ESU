@@ -34,6 +34,16 @@ class Service :
                 ws['C1'] = '확인'
                 ws['D1'] = 'END'
                 ws['E1'] = 'PRE'  # PRE 열 추가
+
+                for row in range(1, 10001):
+                    ws[f"A{row}"].number_format = "@"
+                    ws[f"B{row}"].number_format = "@"
+                    ws[f"C{row}"].number_format = "@" 
+
+                ws.column_dimensions['A'].width = 20
+                ws.column_dimensions['B'].width = 70
+                ws.column_dimensions['C'].width = 70
+
                 wb.save(self.excel_path)
             else:
                 # 파일이 있으면 헤더 확인
@@ -67,16 +77,16 @@ class Service :
     def check_installation_id(self):
         # 먼저 Windows 버전 확인
         if not self.util.check_windows_version():
-            # 버전이 맞지 않으면 PRE 열에 "실패" 저장
-            self.save_pre_status("실패")
+            # 버전이 맞지 않으면 PRE 열에 "설치 불가" 저장
+            self.save_pre_status("설치 불가")
             messagebox.showerror(
                 "버전 불일치", 
                 f"Windows 10 버전이 요구사항과 맞지 않습니다.\n\n"
                 f"현재 버전: {self.current_version}\n"
                 f"필요 버전: 19045.6456\n\n"
-                f"엑셀 PRE 열에 '실패'로 기록되었습니다."
+                f"엑셀 PRE 열에 '설치 불가'로 기록되었습니다."
             )
-            self.ui.status_label.config(text="버전 불일치 - 설치 실패", fg="red")
+            self.ui.status_label.config(text="버전 불일치 - 설치 불가", fg="red")
             return
         
         # 버전이 맞으면 CD 키 확인
