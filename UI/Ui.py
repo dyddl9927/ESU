@@ -18,7 +18,7 @@ class Ui :
         title_label.pack(pady=(0, 20))
         
         # IP 표시
-        self.current_ip = U.get_local_ip()
+        self.current_ip = service.current_ip
         ip_label = tk.Label(main_frame, text=f"현재 PC IP: {self.current_ip}", 
                            font=("Pretendard SemiBold", 10), fg="gray")
         ip_label.pack(pady=(0, 10))

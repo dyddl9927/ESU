@@ -11,18 +11,42 @@ class Service :
         self.root = root
         self.ui = ui
         self.util = util
+
         # 엑셀파일 저장경로
-        self.excel_path = r"c:\1312\esu.xlsx"
+
+        #self.excel_path = r"\\172.26.21.20\ESU\esu.xlsx" #인천공항 공유
+        #self.excel_path = r"\\172.28.243.228\ESU\esu.xlsx" #내부테스트용
+        self.excel_path = r"c:\ESU\esu.xlsx"
+
         # 인증 cdkey 값 입력
-        self.cdkey = "DNRWD-2G6XB-YYVK2-MVDJW-QDFWW"
+        self.cdkey = "PGD98-N4MWG-9YKMW-P83F4-PPVPJ"
+
+        # 정품 인증 ID값 입력
+        self.activation_id = "f520e45e-7413-4a34-a497-d2765967d094"
         self.current_ip = self.util.get_local_ip()
         self.current_version = self.util.get_windows_build()
 
+    def ensure_valid_ip(self):
+        if self.util.is_valid_local_ipv4(self.current_ip):
+            return True
+
+        log_path = self.util.get_log_path()
+        messagebox.showerror(
+            "IP 확인 오류",
+            f"현재 PC의 유효한 IP를 가져오지 못했습니다.\n\n"
+            f"현재 IP: {self.current_ip}\n"
+            f"로그 파일: {log_path}\n\n"
+            f"네트워크 연결, 방화벽, VPN, IP 할당 상태를 확인해주세요."
+        )
+        self.ui.status_label.config(text="IP 확인 실패", fg="red")
+        return False
+
     # 엑셀 파일 및 폴더 확인/생성
     def ensure_excel_exists(self):
-        folder = Path(r"c:\1312")
+
+        folder = Path(r"c:\ESU")
         if not folder.exists():
-            folder.mkdir(parents=True, exist_ok=True)
+         folder.mkdir(parents=True, exist_ok=True)
         
         try:
             if not os.path.exists(self.excel_path):
@@ -34,11 +58,6 @@ class Service :
                 ws['C1'] = '확인'
                 ws['D1'] = 'END'
                 ws['E1'] = 'PRE'  # PRE 열 추가
-
-                for row in range(1, 10001):
-                    ws[f"A{row}"].number_format = "@"
-                    ws[f"B{row}"].number_format = "@"
-                    ws[f"C{row}"].number_format = "@" 
 
                 ws.column_dimensions['A'].width = 20
                 ws.column_dimensions['B'].width = 70
@@ -75,10 +94,17 @@ class Service :
     
     # A작업: Windows 버전 확인 후 CD키 설치 후 설치ID(DTI)값 수집후 엑셀에 저장
     def check_installation_id(self):
+        if not self.ensure_valid_ip():
+            return
+
         # 먼저 Windows 버전 확인
         if not self.util.check_windows_version():
             # 버전이 맞지 않으면 PRE 열에 "설치 불가" 저장
             self.save_pre_status("설치 불가")
+            self.util.write_log(
+                "Windows 버전 불일치로 설치 불가 처리",
+                f"ip: {self.current_ip}\ncurrent_version: {self.current_version}\nrequired_version: 19045.6456 또는 19045.6466",
+            )
             messagebox.showerror(
                 "버전 불일치", 
                 f"Windows 10 버전이 요구사항과 맞지 않습니다.\n\n"
@@ -102,7 +128,7 @@ class Service :
         self.run_command(cmd_ipk)
         
         # DTI 값 가져오기
-        cmd_dti = 'cscript //Nologo c:\\windows\\system32\\slmgr.vbs /dti'
+        cmd_dti = f'cscript //Nologo c:\\windows\\system32\\slmgr.vbs /dti {self.activation_id}'
         result_dti = self.run_command(cmd_dti)
         
         dti_value = self.extract_dti_value(result_dti)
@@ -141,9 +167,17 @@ class Service :
             return True
             
         except PermissionError:
+            self.util.write_log(
+                "PRE 상태 저장 실패: 엑셀 파일 열림",
+                f"ip: {self.current_ip}\nstatus: {status}\nexcel_path: {self.excel_path}",
+            )
             messagebox.showerror("저장 오류", "엑셀 파일(esu.xlsx)이 열려있습니다.\n파일을 닫고 다시 시도해주세요.")
             return False
         except Exception as e:
+            self.util.write_log(
+                "PRE 상태 저장 중 예외 발생",
+                f"ip: {self.current_ip}\nstatus: {status}\nexcel_path: {self.excel_path}\nerror: {type(e).__name__}: {e}",
+            )
             messagebox.showerror("오류", f"엑셀 저장 중 오류 발생: {e}")
             return False
     
@@ -186,14 +220,25 @@ class Service :
             return True
             
         except PermissionError:
+            self.util.write_log(
+                "DTI 저장 실패: 엑셀 파일 열림",
+                f"ip: {self.current_ip}\nexcel_path: {self.excel_path}",
+            )
             messagebox.showerror("저장 오류", "엑셀 파일(esu.xlsx)이 열려있습니다.\n파일을 닫고 다시 시도해주세요.")
             return False
         except Exception as e:
+            self.util.write_log(
+                "DTI 저장 중 예외 발생",
+                f"ip: {self.current_ip}\nexcel_path: {self.excel_path}\nerror: {type(e).__name__}: {e}",
+            )
             messagebox.showerror("오류", f"엑셀 저장 중 오류 발생: {e}")
             return False
     
     # B작업: 인증 및 라이선스 상태 확인
     def activate_esu(self):
+        if not self.ensure_valid_ip():
+            return
+
         self.ui.status_label.config(text="인증 진행 중...", fg="blue")
         self.root.update()
         
@@ -210,7 +255,7 @@ class Service :
             return
         
         # 인증 실행
-        cmd_atp = f'cscript //Nologo c:\\windows\\system32\\slmgr.vbs /atp {confirm_value}'
+        cmd_atp = f'cscript //Nologo c:\\windows\\system32\\slmgr.vbs /atp {confirm_value} {self.activation_id}'
         result_atp = self.run_command(cmd_atp)
         
         # 라이선스 상태 확인
@@ -220,9 +265,8 @@ class Service :
         # cmd_dlv = 'cscript //Nologo c:\\windows\\system32\\slmgr.vbs /dlv'
         # result_dlv = self.run_command(cmd_dlv)
         
-        esu_activation_id = self.extract_esu_activation_id(result_dlv)
-        if esu_activation_id:
-            cmd_dlv_esu = f'cscript //Nologo c:\\windows\\system32\\slmgr.vbs /dlv {esu_activation_id}'
+        if self.activation_id:
+            cmd_dlv_esu = f'cscript //Nologo c:\\windows\\system32\\slmgr.vbs /dlv {self.activation_id}'
             result_dlv = self.run_command(cmd_dlv_esu)
         
         license_status = self.extract_license_status(result_dlv)
@@ -313,9 +357,17 @@ class Service :
             return True
             
         except PermissionError:
+            self.util.write_log(
+                "라이선스 상태 저장 실패: 엑셀 파일 열림",
+                f"ip: {self.current_ip}\nlicense_status: {license_status}\nexcel_path: {self.excel_path}",
+            )
             messagebox.showerror("저장 오류", "엑셀 파일(esu.xlsx)이 열려있습니다.\n파일을 닫고 다시 시도해주세요.")
             return False
         except Exception as e:
+            self.util.write_log(
+                "라이선스 상태 저장 중 예외 발생",
+                f"ip: {self.current_ip}\nlicense_status: {license_status}\nexcel_path: {self.excel_path}\nerror: {type(e).__name__}: {e}",
+            )
             messagebox.showerror("오류", f"저장 중 오류 발생: {e}")
             return False
     
@@ -337,7 +389,15 @@ class Service :
             return None
             
         except PermissionError:
+            self.util.write_log(
+                "확인 값 읽기 실패: 엑셀 파일 열림",
+                f"ip: {self.current_ip}\nexcel_path: {self.excel_path}",
+            )
             messagebox.showerror("읽기 오류", "엑셀 파일(esu.xlsx)이 열려있습니다.\n파일을 닫고 다시 시도해주세요.")
             return "OPEN_ERROR"
         except Exception as e:
+            self.util.write_log(
+                "확인 값 읽기 중 예외 발생",
+                f"ip: {self.current_ip}\nexcel_path: {self.excel_path}\nerror: {type(e).__name__}: {e}",
+            )
             return None
