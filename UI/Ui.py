@@ -56,7 +56,7 @@ class Ui :
                                   font=("Pretendard SemiBold", 12, "bold"),
                                   bg="#2196F3", fg="white",
                                   width=15, height=2,
-                                  command=service.activate_esu)
+                                  command=lambda: service.start_task(service.activate_esu))
         self.btn_auth.pack(side='left', padx=0)
         
         # 상태 표시

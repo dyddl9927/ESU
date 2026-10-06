@@ -14,17 +14,15 @@ class ESUAuthTool:
         
         self.ui = Ui(self.root)
         self.util = U(self.root)
-        self.service = S(self.root,self.ui,self.util)
-        
-        #self.excel_path = r"c:\1312\esu.xlsx"
-        self.service.ensure_excel_exists()
-        self.ui.center_window()
         if not self.util.is_admin():
             self.util.request_admin()
             return
+
+        self.service = S(self.root,self.ui,self.util)
+        self.ui.center_window()
         
         self.ui.setup_ui(self.service)
-        self.service.check_installation_id()
+        self.root.after(0, lambda: self.service.start_task(self.service.initialize))
         
         
     def run(self):
