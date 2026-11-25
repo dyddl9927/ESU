@@ -10,3 +10,5 @@ SetUP/
 
 ## PytInstaller
 *.spec
+/esu.local.json
+/esu cdkey.txt

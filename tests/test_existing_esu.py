@@ -10,6 +10,7 @@ from Service.Service import Service
 class ExistingEsuTests(unittest.TestCase):
     def setUp(self):
         self.service = Service(Mock(), Mock(), Mock())
+        self.service.cdkey = "-".join(["TEST0"] * 5)
         self.service.ensure_valid_ip = Mock(return_value=True)
         self.service.ensure_excel_exists = Mock(return_value=True)
         self.service.save_license_status_to_excel = Mock(return_value=True)

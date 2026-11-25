@@ -1,4 +1,5 @@
 from tkinter import messagebox
+import sys
 import subprocess
 import openpyxl
 from openpyxl import Workbook
@@ -19,14 +20,11 @@ class Service :
         self.ui_thread = threading.get_ident()
         self.ui_queue = queue.Queue()
 
-        # 엑셀파일 저장경로
-
-        #self.excel_path = r"\\172.26.21.20\ESU\esu.xlsx" #인천공항 공유
-        #self.excel_path = r"\\172.28.243.228\ESU\esu.xlsx" #내부테스트용
-        self.excel_path = r"c:\ESU\esu.xlsx"
-
-        # 인증 cdkey 값 입력
-        self.cdkey = "PGD98-N4MWG-9YKMW-P83F4-PPVPJ"
+        base_dir = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parents[1]
+        config_path = base_dir / "esu.local.json"
+        config = json.loads(config_path.read_text(encoding="utf-8-sig")) if config_path.exists() else {}
+        self.excel_path = config.get("excel_path", r"C:\ESU\esu.xlsx")
+        self.cdkey = config.get("cdkey", "").strip()
 
         # 정품 인증 ID값 입력
         self.activation_id = "f520e45e-7413-4a34-a497-d2765967d094"
@@ -238,7 +236,7 @@ class Service :
 
         # 버전이 맞으면 CD 키 확인
         if not self.cdkey:
-            self.show_message("showwarning", "입력 오류", "CD 키를 입력해주세요!")
+            self.show_message("showwarning", "입력 오류", "esu.local.json 파일의 cdkey 항목에 CD 키를 입력해주세요.")
             return
 
         self.set_status(text="설치ID 수집 중...", fg="blue")
@@ -447,9 +445,9 @@ class Service :
             if re.search(r"\bESU\b", block, re.IGNORECASE):
                 return block
         for block in blocks:
-            if re.search(r"부분 제품 키\s*:\s*QDFWW", block, re.IGNORECASE):
+            if self.cdkey and re.search(rf"부분 제품 키\s*:\s*{re.escape(self.cdkey[-5:])}", block, re.IGNORECASE):
                 return block
-            if re.search(r"Partial Product Key\s*:\s*QDFWW", block, re.IGNORECASE):
+            if self.cdkey and re.search(rf"Partial Product Key\s*:\s*{re.escape(self.cdkey[-5:])}", block, re.IGNORECASE):
                 return block
         return None
 

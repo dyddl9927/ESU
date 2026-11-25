@@ -40,7 +40,7 @@
 
     extract_license_status
 
-        QDFWW 키의 라이선스 상태추출(윈도우의 부분제품키와 라이선스 상태를 가져옴)
+        설정한 제품 키의 라이선스 상태추출(윈도우의 부분제품키와 라이선스 상태를 가져옴)
 
     save_license_status_to_excel
 
@@ -101,3 +101,14 @@
 -esu_core
 
 -main
+
+## 로컬 설정
+
+소스 실행 시 저장소 루트에, 배포 시 실행 파일 옆에 `esu.local.json`을 두세요. 아래 예시의 빈 문자열에 제품 키를 입력하세요. 공유 엑셀을 사용하려면 `excel_path`를 공유 경로로 변경하세요.
+
+```json
+{
+  "cdkey": "",
+  "excel_path": "c:\\ESU\\esu.xlsx"
+}
+```
